@@ -6,17 +6,21 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 )
 
 const remoteReadAttempts = 3
 
 type remoteFile struct {
-	ctx    context.Context
-	client *http.Client
-	url    string
-	size   int64
+	ctx        context.Context
+	client     *http.Client
+	url        string
+	size       int64
+	cacheStart int64
+	cacheData  []byte
 }
 
 //nolint:wsl // Request construction and validation are clearer in protocol order.
@@ -78,6 +82,9 @@ func parseContentRange(value string) (int64, int64, int64, error) {
 	return start, end, size, nil
 }
 
+var progressBytes atomic.Int64
+var progressReported atomic.Int64
+
 //nolint:wsl // Range request validation is clearer in protocol order.
 func (r *remoteFile) ReadAt(data []byte, offset int64) (int, error) {
 	if len(data) == 0 {
@@ -90,6 +97,9 @@ func (r *remoteFile) ReadAt(data []byte, offset int64) (int, error) {
 
 	if offset >= r.size {
 		return 0, io.EOF
+	}
+	if len(r.cacheData) > 0 && offset >= r.cacheStart && offset+int64(len(data)) <= r.cacheStart+int64(len(r.cacheData)) {
+		return copy(data, r.cacheData[offset-r.cacheStart:]), nil
 	}
 
 	wanted := len(data)
@@ -137,6 +147,13 @@ func (r *remoteFile) ReadAt(data []byte, offset int64) (int, error) {
 		count, readErr := io.ReadFull(response.Body, data[total:wanted])
 		closeErr := response.Body.Close()
 		total += count
+		if os.Getenv("PASTEL_PROGRESS") == "1" {
+			n := progressBytes.Add(int64(count))
+			old := progressReported.Load()
+			if n-old >= 2*1024*1024 && progressReported.CompareAndSwap(old, n) {
+				fmt.Fprintf(os.Stderr, "已从 Apple 接收 %.1f MB（累计传输量，并非总进度）\n", float64(n)/1048576)
+			}
+		}
 
 		if readErr == nil {
 			lastErr = closeErr

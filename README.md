@@ -1,3 +1,5 @@
+> **非官方 macOS 15 兼容版**：构建方式、认证组件预准备与验证状态见 [MACOS15.md](MACOS15.md)。以下为原项目说明。
+
 <div align="center">
   <br>
   <img src="https://github.com/user-attachments/assets/f302f5d2-730c-44d2-a2c1-63cdd75804f2" width="136" alt="Pastel 图标">

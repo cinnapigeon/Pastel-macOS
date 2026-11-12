@@ -30,7 +30,7 @@ struct DownloadErrorIndicator: View {
                     .contentShape(Capsule())
             }
             .buttonStyle(StablePressButtonStyle())
-            .glassEffect(.regular.tint(Color.yellow.opacity(0.18)).interactive(), in: Capsule())
+
             .accessibilityLabel(String(localized: "查看下载错误"))
             .help(message)
             .popover(isPresented: $isShowingError, arrowEdge: .trailing) {
@@ -79,7 +79,7 @@ struct DownloadErrorIndicator: View {
                 }
                 .buttonStyle(StablePressButtonStyle())
                 .foregroundStyle(Color.accentColor)
-                .glassEffect(.regular.interactive(), in: Capsule())
+
                 .help(message)
             }
         }

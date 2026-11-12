@@ -76,7 +76,7 @@ struct SourceProviderCapsule: View {
             Capsule()
                 .stroke(providerStroke, lineWidth: 1)
         }
-        .glassEffect(.regular.tint(providerGlassTint).interactive(), in: Capsule())
+
         .opacity(isDisabled ? 0.55 : 1)
         .allowsHitTesting(!isDisabled)
     }
@@ -321,7 +321,7 @@ struct VersionSelectionRow: View {
 
     @ViewBuilder
     private var actionSlot: some View {
-        GlassEffectContainer(spacing: 0) {
+        Group {
             ZStack(alignment: .trailing) {
                 actionContent
                     .id(actionState)
@@ -345,8 +345,8 @@ struct VersionSelectionRow: View {
             DownloadProgressPill(progress: downloadProgress, isPackaging: isPackaging, phase: downloadPhase, isPaused: isPaused, onResume: onResume, onPause: onPause, onCancel: onCancel)
         case .downloaded:
             FileActionsBar(isSelected: isSelected, onReveal: onReveal, onAirDrop: onAirDrop, onDelete: onDelete)
-                .glassEffectID("version-row-action", in: actionGlassNamespace)
-                .glassEffectTransition(.matchedGeometry)
+
+
         case .ready:
             Button {
                 onDownload()
@@ -369,9 +369,9 @@ struct VersionSelectionRow: View {
             }
             .buttonStyle(StablePressButtonStyle())
             .foregroundStyle(Color.accentColor)
-            .glassEffect(.regular.tint(isSelected ? Color.white.opacity(0.34) : nil).interactive(), in: Capsule())
-            .glassEffectID("version-row-action", in: actionGlassNamespace)
-            .glassEffectTransition(.matchedGeometry)
+
+
+
         }
     }
 

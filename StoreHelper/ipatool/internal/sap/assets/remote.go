@@ -4,6 +4,7 @@ package assets
 import (
 	"archive/zip"
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"net/http"
@@ -59,14 +60,47 @@ func resolveRemoteImage(ctx context.Context) (Bundle, error) {
 	defer os.RemoveAll(workspace)
 
 	frameworkDirectory := filepath.Join(workspace, "frameworks")
-	if err := extractFrameworkFiles(ctx, client, remote, fileSystemEntry, frameworkDirectory); err != nil {
+	reused := reuseFrameworks(frameworkDirectory) == nil
+	if !reused {
+		fmt.Fprintln(os.Stderr, "正在提取 Apple 系统文件……")
+		if err := extractFrameworkFiles(ctx, client, remote, fileSystemEntry, frameworkDirectory); err != nil {
+			return Bundle{}, err
+		}
+
+	}
+	fmt.Fprintln(os.Stderr, "正在读取 AppleMediaServices 系统框架……")
+	appleMediaServicesPath := filepath.Join(frameworkDirectory, "AppleMediaServices")
+	if !reused {
+		if err := extractAppleMediaServices(ctx, client, remote, systemOSEntry, appleMediaServicesPath); err != nil {
+			return Bundle{}, fmt.Errorf("extract AppleMediaServices from macOS %s (%s): %w", macOSVersion, macOSBuild, err)
+		}
+	}
+	fmt.Fprintln(os.Stderr, "正在分块下载最后的内核组件（约 31.5 MB）……")
+	kernel, err := pinnedZipEntry(archive, kernelCacheName, kernelCacheCompressedSize, kernelCacheArchiveSize)
+	if err != nil {
 		return Bundle{}, err
 	}
-
-	appleMediaServicesPath := filepath.Join(frameworkDirectory, "AppleMediaServices")
-	if err := extractAppleMediaServices(ctx, client, remote, systemOSEntry, appleMediaServicesPath); err != nil {
-		return Bundle{}, fmt.Errorf("extract AppleMediaServices from macOS %s (%s): %w", macOSVersion, macOSBuild, err)
+	start, err := kernel.DataOffset()
+	if err != nil {
+		return Bundle{}, err
 	}
+	buf := make([]byte, kernelCacheCompressedSize)
+	for pos := 0; pos < len(buf); {
+		end := pos + 1024*1024
+		if end > len(buf) {
+			end = len(buf)
+		}
+		n, err := remote.ReadAt(buf[pos:end], start+int64(pos))
+		if err != nil {
+			return Bundle{}, err
+		}
+		if n != end-pos {
+			return Bundle{}, io.ErrUnexpectedEOF
+		}
+		pos = end
+		fmt.Fprintf(os.Stderr, "内核组件: %.1f / %.1f MB\n", float64(pos)/1048576, float64(len(buf))/1048576)
+	}
+	remote.cacheStart, remote.cacheData = start, buf
 	if err := extractFairPlayKext(archive, filepath.Join(frameworkDirectory, "FairPlayIOKit")); err != nil {
 		return Bundle{}, err
 	}
@@ -176,5 +210,38 @@ func extractFrameworkFiles(ctx context.Context, client *http.Client, remote *rem
 		return fmt.Errorf("extract frameworks from macOS %s (%s): %w", macOSVersion, macOSBuild, err)
 	}
 
+	return nil
+}
+
+// reuseFrameworks accepts only previously extracted files that match upstream hashes.
+func reuseFrameworks(destination string) error {
+	source := os.Getenv("PASTEL_PREPARED_DIR")
+	if source == "" {
+		return fmt.Errorf("没有可复用的文件")
+	}
+	names := []string{"adid", "commerce", "CoreFP", "CoreFP.icxs", "fairplayd", "AppleMediaServices"}
+	if err := os.MkdirAll(destination, 0700); err != nil {
+		return err
+	}
+	for _, name := range names {
+		data, err := os.ReadFile(filepath.Join(source, name))
+		if err != nil {
+			return err
+		}
+		valid := false
+		for _, spec := range requiredFiles {
+			if spec.name == name && len(data) == spec.size && sha256.Sum256(data) == spec.digest {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			return fmt.Errorf("%s 校验失败", name)
+		}
+		if err := os.WriteFile(filepath.Join(destination, name), data, 0600); err != nil {
+			return err
+		}
+		fmt.Fprintln(os.Stderr, "已校验并复用:", name)
+	}
 	return nil
 }

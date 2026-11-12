@@ -2902,34 +2902,13 @@ struct ContentView: View {
 
     @ToolbarContentBuilder
     private var adaptiveMainToolbar: some ToolbarContent {
-        if #available(macOS 26.1, *) {
-            ToolbarItem(placement: .principal) {
-                floatingModeBar
-            }
-            .sharedBackgroundVisibility(.hidden)
-            .visibilityPriority(.high)
-
-            ToolbarItem(placement: .primaryAction) {
-                toolbarSettingsButton
-            }
-            .sharedBackgroundVisibility(.hidden)
-            .visibilityPriority(.high)
-        } else {
-            ToolbarItem(placement: .principal) {
-                floatingModeBar
-            }
-            .sharedBackgroundVisibility(.hidden)
-
-            ToolbarItem(placement: .primaryAction) {
-                toolbarSettingsButton
-            }
-            .sharedBackgroundVisibility(.hidden)
-        }
+        ToolbarItem(placement: .principal) { floatingModeBar }
+        ToolbarItem(placement: .primaryAction) { toolbarSettingsButton }
     }
 
     private var appBackground: some View {
         Rectangle()
-            .fill(.windowBackground)
+            .fill(Color(nsColor: .windowBackgroundColor))
             .ignoresSafeArea()
     }
 
@@ -2941,7 +2920,7 @@ struct ContentView: View {
                 .font(.system(size: 15, weight: .regular))
                 .frame(width: 35, height: 35)
                 .contentShape(Circle())
-                .glassEffect(.regular, in: Circle())
+
         }
         .buttonStyle(.plain)
         .accessibilityLabel(String(localized: "设置"))
@@ -2958,7 +2937,7 @@ struct ContentView: View {
     }
 
     private var floatingModeBar: some View {
-        GlassEffectContainer(spacing: 6) {
+        Group {
             HStack(spacing: 0) {
                 ForEach(Array(RightPanelMode.allCases.enumerated()), id: \.element.id) { index, mode in
                     Button {
@@ -3013,7 +2992,7 @@ struct ContentView: View {
                 Capsule()
                     .stroke(modeBarStroke, lineWidth: 1)
             }
-            .glassEffect(.regular.tint(modeBarGlassTint), in: Capsule())
+
         }
     }
 
@@ -3333,13 +3312,13 @@ struct ContentView: View {
             .padding(.horizontal, 18)
             .padding(.bottom, 34)
         }
-        .safeAreaBar(edge: .top, spacing: 4) {
+        .safeAreaInset(edge: .top, spacing: 4) {
             sidebarSearchPanel
                 .padding(.horizontal, 18)
                 .padding(.top, 8)
                 .padding(.bottom, 8)
         }
-        .scrollEdgeEffectStyle(.soft, for: .top)
+
         .contentMargins(.trailing, 0, for: .scrollIndicators)
     }
 
@@ -3352,7 +3331,7 @@ struct ContentView: View {
     }
 
     private var sidebarSearchPanel: some View {
-        GlassEffectContainer(spacing: 10) {
+        Group {
             VStack(spacing: 10) {
                 sidebarSearchControls
                 sidebarPlatformPicker
@@ -3406,7 +3385,7 @@ struct ContentView: View {
         .frame(height: 42)
         .frame(maxWidth: .infinity)
         .contentShape(Capsule())
-        .glassEffect(.regular.tint(searchControlGlassTint).interactive(), in: Capsule())
+
         .background(searchControlFill, in: Capsule())
         .overlay {
             Capsule()
@@ -3455,7 +3434,7 @@ struct ContentView: View {
         }
         .padding(3)
         .frame(maxWidth: .infinity, minHeight: 36, maxHeight: 36)
-        .glassEffect(.regular.tint(searchControlGlassTint).interactive(), in: Capsule())
+
         .background(searchControlFill, in: Capsule())
         .overlay {
             Capsule()
@@ -3534,7 +3513,7 @@ struct ContentView: View {
                             } label: {
                                 Text(String(localized: "前往 Apple 来源获取"))
                             }
-                            .buttonStyle(.glassProminent)
+                            .buttonStyle(.borderedProminent)
                             .controlSize(.large)
                             .disabled(catalog.isLoadingVersions)
                         }
@@ -3556,7 +3535,7 @@ struct ContentView: View {
                                 } label: {
                                     Text(String(localized: "获取"))
                                 }
-                                .buttonStyle(.glassProminent)
+                                .buttonStyle(.borderedProminent)
                                 .controlSize(.large)
                                 .disabled(catalog.isLoadingVersions)
                             } else {
@@ -3572,7 +3551,7 @@ struct ContentView: View {
                                 } label: {
                                     Label(String(localized: "查询历史版本"), systemImage: "arrow.clockwise")
                                 }
-                                .buttonStyle(.glassProminent)
+                                .buttonStyle(.borderedProminent)
                                 .controlSize(.large)
                                 .disabled(catalog.isLoadingVersions)
                             }
@@ -3636,7 +3615,7 @@ struct ContentView: View {
                                 .padding(.top, 4)
                                 .padding(.bottom, 18)
                             }
-                            .safeAreaBar(edge: .top, spacing: 4) {
+                            .safeAreaInset(edge: .top, spacing: 4) {
                                 versionsHeaderBar
                             }
                             .contentMargins(.bottom, 6, for: .scrollContent)
@@ -3764,7 +3743,7 @@ struct ContentView: View {
     }
 
     private var manualActionSlot: some View {
-        GlassEffectContainer(spacing: 0) {
+        Group {
             ZStack(alignment: .trailing) {
                 manualActionContent
                     .id(manualActionState)
@@ -3805,8 +3784,8 @@ struct ContentView: View {
                     }
                 }
             )
-            .glassEffectID("manual-download-action", in: manualActionGlassNamespace)
-            .glassEffectTransition(.matchedGeometry)
+
+
         case .ready:
             Button {
                 downloadManualVersionID()
@@ -3818,9 +3797,9 @@ struct ContentView: View {
             }
             .buttonStyle(StablePressButtonStyle())
             .foregroundStyle(canDownloadManualVersion ? Color.accentColor : Color.secondary)
-            .glassEffect(.regular.interactive(), in: Capsule())
-            .glassEffectID("manual-download-action", in: manualActionGlassNamespace)
-            .glassEffectTransition(.matchedGeometry)
+
+
+
             .disabled(!canDownloadManualVersion)
         }
     }
@@ -3960,7 +3939,7 @@ struct ContentView: View {
     }
 
     private var appStoreSearchBar: some View {
-        GlassEffectContainer(spacing: 12) {
+        Group {
             HStack(spacing: 12) {
                 countryMenu
 
@@ -3994,7 +3973,7 @@ struct ContentView: View {
             .padding(.horizontal, 16)
             .frame(height: 36)
             .frame(maxWidth: .infinity)
-            .glassEffect(.regular.interactive(), in: Capsule())
+
             .background(Color.black.opacity(0.035), in: Capsule())
             .overlay {
                 Capsule()
@@ -4010,7 +3989,7 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.white)
-            .glassEffect(.regular.tint(Color.accentColor).interactive(), in: Capsule())
+
             .disabled(catalog.isSearching)
         }
     }
@@ -4062,7 +4041,7 @@ struct ContentView: View {
             .padding(.horizontal, 12)
             .frame(width: compactCountryMenuWidth, height: 36)
             .contentShape(Capsule())
-            .glassEffect(.regular.interactive(), in: Capsule())
+
             .background(Color.black.opacity(0.035), in: Capsule())
             .overlay {
                 Capsule()
@@ -4115,7 +4094,7 @@ struct ContentView: View {
                 } label: {
                     Label(String(localized: "刷新"), systemImage: "arrow.clockwise")
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(.bordered)
                 .controlSize(.large)
                 .disabled(activeAppID.isEmpty || catalog.isLoadingVersions)
             }
@@ -4138,7 +4117,7 @@ struct ContentView: View {
                     } label: {
                         Label(String(localized: "查询历史版本"), systemImage: "clock.arrow.circlepath")
                     }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .disabled(catalog.isLoadingVersions)
                 }
@@ -4292,13 +4271,13 @@ struct ContentView: View {
             .padding(.horizontal, 18)
             .padding(.bottom, 34)
         }
-        .safeAreaBar(edge: .top, spacing: 4) {
+        .safeAreaInset(edge: .top, spacing: 4) {
             downloadSidebarSearchPanel
                 .padding(.horizontal, 18)
                 .padding(.top, 8)
                 .padding(.bottom, 8)
         }
-        .scrollEdgeEffectStyle(.soft, for: .top)
+
         .contentMargins(.trailing, 0, for: .scrollIndicators)
     }
 
@@ -4316,7 +4295,7 @@ struct ContentView: View {
     }
 
     private var downloadSidebarSearchPanel: some View {
-        GlassEffectContainer(spacing: 0) {
+        Group {
             downloadSidebarSearchControls
         }
         .frame(maxWidth: .infinity)
@@ -4353,7 +4332,7 @@ struct ContentView: View {
         .frame(height: 42)
         .frame(maxWidth: .infinity)
         .contentShape(Capsule())
-        .glassEffect(.regular.tint(searchControlGlassTint).interactive(), in: Capsule())
+
         .background(searchControlFill, in: Capsule())
         .overlay {
             Capsule()
@@ -4405,7 +4384,7 @@ struct ContentView: View {
                         .padding(.top, 4)
                         .padding(.bottom, 18)
                     }
-                    .safeAreaBar(edge: .top, spacing: 4) {
+                    .safeAreaInset(edge: .top, spacing: 4) {
                         downloadedVersionsHeaderBar
                     }
                     .contentMargins(.bottom, 6, for: .scrollContent)
@@ -4462,7 +4441,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(StablePressButtonStyle())
                 .foregroundStyle(.primary)
-                .glassEffect(.regular.interactive(), in: Capsule())
+
             }
         }
         .padding(.horizontal, 2)
@@ -4477,7 +4456,7 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 32, alignment: .center)
-        .background(.windowBackground)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
     private var downloadedVersionsHeaderBar: some View {
@@ -4487,7 +4466,7 @@ struct ContentView: View {
 
             Divider()
         }
-        .background(.windowBackground)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
     private func downloadedVersionsFooterBar(count: Int) -> some View {
@@ -4496,7 +4475,7 @@ struct ContentView: View {
 
             downloadedVersionListStatusBar(count: count)
         }
-        .background(.windowBackground)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
     private var downloadedVersionsHeader: some View {
@@ -4874,7 +4853,7 @@ struct ContentView: View {
         }
         .background {
             Color(nsColor: .windowBackgroundColor)
-                .backgroundExtensionEffect()
+
         }
     }
 
@@ -4888,7 +4867,7 @@ struct ContentView: View {
                 Label(String(localized: "搜索"), systemImage: "magnifyingglass")
             }
             .controlSize(.large)
-            .buttonStyle(.glass)
+            .buttonStyle(.bordered)
             .disabled(catalog.isSearching)
         case .versions:
             Button {
@@ -4897,7 +4876,7 @@ struct ContentView: View {
                 Label(String(localized: "查询"), systemImage: "clock.arrow.circlepath")
             }
             .controlSize(.large)
-            .buttonStyle(.glass)
+            .buttonStyle(.bordered)
             .disabled(catalog.isLoadingVersions)
         case .download:
             Button {
@@ -4906,7 +4885,7 @@ struct ContentView: View {
                 Label(String(localized: "开始下载"), systemImage: "play.fill")
             }
             .controlSize(.large)
-            .buttonStyle(.glassProminent)
+            .buttonStyle(.borderedProminent)
             .disabled((selectedDownloadJobID().map { downloads.isRunning($0) } ?? false) || activeAppID.isEmpty || versionFeature.selectedVersion == nil)
         case .logs:
             Button {
@@ -4915,7 +4894,7 @@ struct ContentView: View {
                 Label(String(localized: "清空"), systemImage: "trash")
             }
             .controlSize(.large)
-            .buttonStyle(.glass)
+            .buttonStyle(.bordered)
             .disabled(activeLog.isEmpty || anyRunning)
         }
     }
@@ -5127,7 +5106,7 @@ struct ContentView: View {
 
             Divider()
         }
-        .background(.windowBackground)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
     private var versionsFooterBar: some View {
@@ -5136,7 +5115,7 @@ struct ContentView: View {
 
             versionListStatusBar
         }
-        .background(.windowBackground)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
     private var versionListStatusBar: some View {
@@ -6632,7 +6611,7 @@ struct FileActionsBar: View {
             FileActionButton(systemImage: "trash", tint: .red, size: 13.5, help: String(localized: "删除本地文件"), action: onDelete)
         }
         .padding(2)
-        .glassEffect(.regular, in: Capsule())
+
     }
 }
 
@@ -6784,7 +6763,7 @@ struct DownloadProgressPill: View {
                             .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
-                    .glassEffect(.regular.tint(Color.accentColor.opacity(0.12)).interactive(), in: Capsule())
+
                     .help(String(localized: "继续下载"))
                     .accessibilityLabel(String(localized: "继续下载"))
 
@@ -6796,7 +6775,7 @@ struct DownloadProgressPill: View {
                             .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
-                    .glassEffect(.regular.tint(Color.red.opacity(0.08)).interactive(), in: Capsule())
+
                     .help(String(localized: "取消下载"))
                     .accessibilityLabel(String(localized: "取消下载"))
                 }
@@ -6845,7 +6824,7 @@ struct DownloadProgressPill: View {
         }
         .frame(width: 58, height: 26)
         .clipShape(Capsule())
-        .glassEffect(.regular.tint(Color.accentColor.opacity(0.12)).interactive(), in: Capsule())
+
     }
 
     @ViewBuilder
@@ -6936,7 +6915,7 @@ private struct SidebarControlButtonStyleModifier: ViewModifier {
 private struct SidebarActionButtonStyleModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .buttonStyle(.glass)
+            .buttonStyle(.bordered)
             .controlSize(.large)
             .font(.body)
     }
@@ -7096,7 +7075,7 @@ private struct SettingsContentPane<Accessory: View, Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollIndicators(.visible)
-        .scrollEdgeEffectStyle(.hard, for: .top)
+
         .toolbar(removing: .title)
         .toolbar { settingsToolbar }
     }
@@ -7113,7 +7092,6 @@ private struct SettingsContentPane<Accessory: View, Content: View>: View {
                     .fixedSize()
             }
         }
-        .sharedBackgroundVisibility(.hidden)
 
         if Accessory.self != EmptyView.self {
             ToolbarItem(placement: .primaryAction) {
@@ -7143,7 +7121,7 @@ private struct SettingsNavigationButtons: View {
                       action: navigation.goForward)
         }
         .frame(width: 72, height: 32)
-        .glassEffect(.regular, in: Capsule())
+
     }
 
     private func navButton(systemImage: String, label: String, isEnabled: Bool, action: @escaping () -> Void) -> some View {
@@ -7237,7 +7215,7 @@ private struct SettingsAccountActionsBar: View {
                                         action: onDelete)
         }
         .padding(2.5)
-        .glassEffect(.regular.tint(isSelected ? Color.white.opacity(0.18) : Color.clear), in: Capsule())
+
     }
 }
 
@@ -7319,7 +7297,7 @@ struct AccountSettingsView: View {
                             .contentShape(Circle())
                     }
                     .buttonStyle(StablePressButtonStyle())
-                    .glassEffect(.regular.interactive(), in: Circle())
+
                     .accessibilityLabel(String(localized: "添加账户"))
                     .help(String(localized: "添加账户"))
 
@@ -7984,7 +7962,7 @@ struct AboutSettingsView: View {
 
                 SettingsGroupDivider()
 
-                CheckForUpdatesSettingsRow(updater: updateManager.updater)
+
 
                 SettingsGroupDivider()
 
@@ -8123,7 +8101,7 @@ final class AppUpdateManager {
     let updaterController: SPUStandardUpdaterController
 
     init() {
-        updaterController = SPUStandardUpdaterController(startingUpdater: true,
+        updaterController = SPUStandardUpdaterController(startingUpdater: false,
                                                          updaterDelegate: nil,
                                                          userDriverDelegate: nil)
     }
@@ -8277,7 +8255,7 @@ struct PastelSettingsCommands: Commands {
         }
 
         CommandGroup(after: .appInfo) {
-            CheckForUpdatesMenuItem(updater: updateManager.updater)
+
         }
     }
 }
