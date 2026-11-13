@@ -124,6 +124,12 @@ func main() {
 	emitPhase("authenticating")
 	if !appleAssetsCached() {
 		emitPhase("preparing")
+		if input.Command == "login" {
+			if err := appstore.Prepare(context.Background()); err != nil {
+				abort("AUTH_PREPARATION_FAILED", err)
+			}
+			emitPhase("authenticating")
+		}
 	}
 	fileSystem := &transferOperatingSystem{OperatingSystem: operatingsystem.New(), preserveDownloadFiles: input.PreservePartial, beforeTransfer: func() error {
 		if err := saveAuthenticationCookies(keys, input.Email, jar); err != nil {

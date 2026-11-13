@@ -1088,6 +1088,39 @@ enum StoreOperationPhase: String {
     }
 }
 
+struct AuthenticationAssetProgress {
+    let name: String
+    let completed: Int64
+    let total: Int64
+
+    var fraction: Double? { total > 0 ? min(1, max(0, Double(completed) / Double(total))) : nil }
+    var message: String {
+        switch name {
+        case "connecting": return String(localized: "正在连接 Apple 服务器…")
+        case "verifying": return String(localized: "正在校验认证组件…")
+        case "adid": return String(localized: "正在准备设备认证组件（adid）…")
+        case "commerce": return String(localized: "正在准备商店认证组件（commerce）…")
+        case "CoreFP": return String(localized: "正在准备授权组件（CoreFP）…")
+        case "CoreFP.icxs": return String(localized: "正在准备授权组件（CoreFP.icxs）…")
+        case "fairplayd": return String(localized: "正在准备授权组件（fairplayd）…")
+        case "AppleMediaServices": return String(localized: "正在读取 AppleMediaServices 系统框架…")
+        case "FairPlayIOKit": return String(localized: "正在下载 FairPlayIOKit 内核组件…")
+        default: return String(localized: "正在准备 Apple 认证组件…")
+        }
+    }
+    static func latest(in log: String) -> Self? {
+        for line in log.split(separator: "\n").reversed() {
+            let prefix = "@@IPA:asset="
+            guard line.hasPrefix(prefix) else { continue }
+            let fields = line.dropFirst(prefix.count).split(separator: "|", omittingEmptySubsequences: false)
+            guard fields.count == 3, let done = Int64(fields[1]), let total = Int64(fields[2]),
+                  done >= 0, total >= 0, done <= total else { continue }
+            return Self(name: String(fields[0]), completed: done, total: total)
+        }
+        return nil
+    }
+}
+
 func ipaIsVerificationChallenge(_ text: String) -> Bool {
     return text.contains("[2FA]")
 }
@@ -1314,6 +1347,7 @@ final class AccountStore {
 
     var isValidating = false
     var validationMessage = ""
+    var validationProgress: Double? = nil
     var needsCode = false
     var saveTick = 0
     var reloginRequestID: UUID?
@@ -1511,6 +1545,7 @@ final class AccountStore {
         isValidating = false
         needsCode = false
         validationMessage = ""
+        validationProgress = nil
         pending = nil
     }
 
@@ -1539,6 +1574,7 @@ final class AccountStore {
         isValidating = true
         needsCode = !code.isEmpty
         validationLog = ""
+        validationProgress = nil
 
         let task = Process()
         task.executableURL = runtime.nodeURL
@@ -1565,6 +1601,15 @@ final class AccountStore {
                 self.validationLog += t.replacingOccurrences(of: "\r", with: "\n")
                 if self.isValidating, let phase = StoreOperationPhase.latest(in: self.validationLog) {
                     self.validationMessage = phase.message
+                    self.validationProgress = nil
+                    if phase == .preparing,
+                       let phaseRange = self.validationLog.range(of: "@@IPA:phase=preparing", options: .backwards) {
+                        let relevant = self.validationLog[phaseRange.upperBound...]
+                        if let item = AuthenticationAssetProgress.latest(in: String(relevant)) {
+                            self.validationMessage = item.message
+                            self.validationProgress = item.fraction
+                        }
+                    }
                 }
             }
         }
@@ -7656,12 +7701,24 @@ struct AccountEditorView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             if accountStore.isValidating && !accountStore.needsCode {
-                HStack(spacing: 8) {
-                    ProgressView().controlSize(.small)
-                    Text(accountStore.validationMessage.isEmpty ? String(localized: "正在验证…") : accountStore.validationMessage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
+                        if accountStore.validationProgress == nil { ProgressView().controlSize(.small) }
+                        Text(accountStore.validationMessage.isEmpty ? String(localized: "正在验证…") : accountStore.validationMessage)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer()
+                        if let progress = accountStore.validationProgress {
+                            Text("\(Int((progress * 100).rounded()))%")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    if let progress = accountStore.validationProgress {
+                        ProgressView(value: progress)
+                            .accessibilityLabel(String(localized: "当前认证组件下载进度"))
+                    }
                 }
             } else if !accountStore.needsCode && !accountStore.validationMessage.isEmpty {
                 Text(accountStore.validationMessage)

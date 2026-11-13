@@ -26,7 +26,7 @@ export function reportStorePhase(phase) {
     process.stdout.write(`@@IPA:phase=${phase}\n`);
 }
 
-export async function runStoreHelper(input, {onProgress, onPhase = reportStorePhase, timeouts = PHASE_TIMEOUTS} = {}) {
+export async function runStoreHelper(input, {onProgress, onPhase = reportStorePhase, onAsset = asset => process.stdout.write(`@@IPA:asset=${asset}\n`), timeouts = PHASE_TIMEOUTS} = {}) {
     const helper = storeHelperPath();
     if (!existsSync(helper)) {
         const error = new Error(`缺少 Apple Store 组件：${helper}`);
@@ -35,10 +35,11 @@ export async function runStoreHelper(input, {onProgress, onPhase = reportStorePh
     }
 
     return await new Promise((resolve, reject) => {
-        const child = spawn(helper, [], {stdio: ['pipe', 'pipe', 'pipe']});
+        const child = spawn(helper, [], {stdio: ['pipe', 'pipe', 'pipe'], env: {...process.env, PASTEL_ASSET_EVENTS: '1'}});
         const stdout = [];
         let stderr = '';
         let lastPercent = -1;
+        let assetLines = '';
         let phase = 'waiting';
         let deadline;
         let killDeadline;
@@ -84,6 +85,16 @@ export async function runStoreHelper(input, {onProgress, onPhase = reportStorePh
                 if (!stopped) armDeadline();
             } else if (nextPhase === 'waiting' && !stopped) {
                 onPhase?.('waiting');
+            }
+            // Protocol lines are buffered separately so split pipe writes are safe.
+            assetLines = (assetLines + chunk).slice(-16384);
+            const complete = assetLines.split('\n');
+            assetLines = complete.pop();
+            for (const line of complete) {
+                const asset = line.trim().match(/^@@PASTEL:asset=([A-Za-z0-9.]+)\|(\d+)\|(\d+)$/);
+                if (!asset || stopped) continue;
+                onAsset?.(`${asset[1]}|${asset[2]}|${asset[3]}`);
+                if (phase === 'preparing') armDeadline();
             }
             const matches = [...stderr.matchAll(/(\d{1,3})\s*%/g)];
             const percent = matches.length ? Number(matches.at(-1)[1]) : NaN;

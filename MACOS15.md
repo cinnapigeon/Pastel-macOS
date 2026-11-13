@@ -16,6 +16,8 @@ The script creates `dist/Pastel 15.app` and `dist/pastel-prepare`; use `PASTEL_O
 
 ## Prepare before signing in
 
+First sign-in also prepares the Apple files automatically. The account dialog displays the current component and, where its size is known, its progress. The progress bar is for the current component, not the entire setup. The standalone tool below can optionally prepare the files before opening the app.
+
 ```sh
 ./dist/pastel-prepare
 ```

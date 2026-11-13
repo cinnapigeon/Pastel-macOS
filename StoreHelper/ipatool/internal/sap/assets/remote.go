@@ -32,6 +32,7 @@ var frameworkImagePaths = []string{
 }
 
 func resolveRemoteImage(ctx context.Context) (Bundle, error) {
+	assetProgress("connecting", 0, 0)
 	client := &http.Client{}
 	remote, err := openRemoteFile(ctx, client)
 	if err != nil {
@@ -68,6 +69,7 @@ func resolveRemoteImage(ctx context.Context) (Bundle, error) {
 		}
 
 	}
+	assetProgress("AppleMediaServices", 0, 0)
 	fmt.Fprintln(os.Stderr, "正在读取 AppleMediaServices 系统框架……")
 	appleMediaServicesPath := filepath.Join(frameworkDirectory, "AppleMediaServices")
 	if !reused {
@@ -85,6 +87,7 @@ func resolveRemoteImage(ctx context.Context) (Bundle, error) {
 		return Bundle{}, err
 	}
 	buf := make([]byte, kernelCacheCompressedSize)
+	assetProgress("FairPlayIOKit", 0, int64(len(buf)))
 	for pos := 0; pos < len(buf); {
 		end := pos + 1024*1024
 		if end > len(buf) {
@@ -98,6 +101,7 @@ func resolveRemoteImage(ctx context.Context) (Bundle, error) {
 			return Bundle{}, io.ErrUnexpectedEOF
 		}
 		pos = end
+		assetProgress("FairPlayIOKit", int64(pos), int64(len(buf)))
 		fmt.Fprintf(os.Stderr, "内核组件: %.1f / %.1f MB\n", float64(pos)/1048576, float64(len(buf))/1048576)
 	}
 	remote.cacheStart, remote.cacheData = start, buf
@@ -105,6 +109,7 @@ func resolveRemoteImage(ctx context.Context) (Bundle, error) {
 		return Bundle{}, err
 	}
 
+	assetProgress("verifying", 0, 0)
 	files := make(map[string][]byte, len(requiredFiles))
 
 	for _, spec := range requiredFiles {

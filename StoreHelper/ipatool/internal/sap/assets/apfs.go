@@ -151,7 +151,10 @@ func (e *apfsExtractor) extractFile(ctx context.Context, path, destination strin
 	}()
 
 	reader := &contextReader{ctx: ctx, reader: io.NewSectionReader(file, 0, file.size)}
-	if _, err := io.CopyN(output, reader, file.size); err != nil {
+	name := filepath.Base(path)
+	assetProgress(name, 0, file.size)
+	writer := &assetProgressWriter{writer: output, name: name, total: file.size}
+	if _, err := io.CopyN(writer, reader, file.size); err != nil {
 		return fmt.Errorf("copy file data: %w", err)
 	}
 

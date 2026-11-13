@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+  "正在连接 Apple 服务器…": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Connecting to Apple…"}}}},
+  "正在校验认证组件…": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Verifying authentication components…"}}}},
+  "正在准备设备认证组件（adid）…": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Preparing device authentication (adid)…"}}}},
+  "正在准备商店认证组件（commerce）…": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Preparing store authentication (commerce)…"}}}},
+  "正在准备授权组件（CoreFP）…": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Preparing authorization component (CoreFP)…"}}}},
+  "正在准备授权组件（CoreFP.icxs）…": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Preparing authorization component (CoreFP.icxs)…"}}}},
+  "正在准备授权组件（fairplayd）…": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Preparing authorization component (fairplayd)…"}}}},
+  "正在读取 AppleMediaServices 系统框架…": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Reading AppleMediaServices framework…"}}}},
+  "正在下载 FairPlayIOKit 内核组件…": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Downloading FairPlayIOKit component…"}}}},
+  "正在准备 Apple 认证组件…": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Preparing Apple authentication components…"}}}},
+  "当前认证组件下载进度": {"localizations": {"en": {"stringUnit": {"state": "translated", "value": "Current authentication component progress"}}}},
   "下载组件返回了过大的响应。": {
     "localizations": {
       "en": {

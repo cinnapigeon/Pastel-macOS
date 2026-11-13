@@ -99,3 +99,25 @@ setInterval(()=>{},1000);
         await rm(directory,{recursive:true,force:true});
     }
 });
+
+
+test('preparation progress survives fragmented helper output and does not expose unrelated lines', async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), 'pastel-assets-test-'));
+    const helper = path.join(directory, 'helper');
+    const previous = process.env.PASTEL_STORE_HELPER;
+    await writeFile(helper, `#!${process.execPath}
+process.stderr.write('@@PASTEL:phase=preparing\\n@@PASTEL:asset=Core');
+setTimeout(() => process.stderr.write('FP|25|100\\nignored private text\\n@@PASTEL:asset=FairPlayIOKit|10|20\\n'), 10);
+setTimeout(() => { process.stderr.write('@@PASTEL:phase=authenticating\\n'); process.stdout.write(JSON.stringify({ok:true})); }, 30);
+`, {mode:0o700});
+    try {
+        process.env.PASTEL_STORE_HELPER = helper;
+        const assets = [], phases = [];
+        await runStoreHelper({}, {onAsset: value => assets.push(value), onPhase: value => phases.push(value)});
+        assert.deepEqual(assets, ['CoreFP|25|100', 'FairPlayIOKit|10|20']);
+        assert.deepEqual(phases, ['preparing', 'authenticating']);
+    } finally {
+        if (previous === undefined) delete process.env.PASTEL_STORE_HELPER; else process.env.PASTEL_STORE_HELPER = previous;
+        await rm(directory, {recursive:true, force:true});
+    }
+});
