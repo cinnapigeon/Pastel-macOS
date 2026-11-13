@@ -12,7 +12,7 @@ Requirements: Apple Silicon Mac, macOS 15 or later, Apple command line developer
 sh Scripts/BuildMacOS15.sh
 ```
 
-The script creates `dist/Pastel 15.app` and `dist/pastel-prepare`; use `PASTEL_OUTPUT_DIR` to choose a different directory. It refuses to overwrite an existing app. The app is ad-hoc signed, not notarized; macOS may warn on opening. The CLI build does not include the original application icon and supports the simple string translations in the source catalog.
+The script creates `dist/Pastel 15.app` and `dist/pastel-prepare`; use `PASTEL_OUTPUT_DIR` to choose a different directory. It refuses to overwrite an existing app. The app is ad-hoc signed, not notarized; macOS may warn on opening. The CLI build uses the original project’s application artwork and supports the simple string translations in the source catalog.
 
 ## Prepare before signing in
 

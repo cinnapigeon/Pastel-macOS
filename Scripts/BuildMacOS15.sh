@@ -27,6 +27,14 @@ gzip -dc "$root/node/bin/store-helper.gz" > "$build/Resources/store-helper"
 chmod +x "$build/Resources/store-helper"
 xcrun clang -fobjc-arc -fblocks -arch arm64 -mmacosx-version-min=15.0 -framework Foundation "$root/Scripts/SAPSigner.m" -o "$build/Resources/sap-signer"
 cp "$root/Pastel/PastelAboutIcon.png" "$build/Resources/"
+iconset="$tmp/AppIcon.iconset"
+mkdir -p "$iconset"
+for size in 16 32 128 256 512; do
+    sips -z "$size" "$size" "$root/Pastel/PastelAboutIcon.png" --out "$iconset/icon_${size}x${size}.png" >/dev/null
+    double=$((size * 2))
+    sips -z "$double" "$double" "$root/Pastel/PastelAboutIcon.png" --out "$iconset/icon_${size}x${size}@2x.png" >/dev/null
+done
+iconutil -c icns "$iconset" -o "$build/Resources/AppIcon.icns"
 cp "$root/StoreHelper/ipatool/LICENSE" "$build/Resources/ipatool-LICENSE.txt"
 python3 - "$root" "$build" <<'PY'
 import json, plistlib, sys
@@ -34,7 +42,7 @@ from pathlib import Path
 root, build = map(Path,sys.argv[1:]); res=build/'Resources'
 p=plistlib.loads((root/'Pastel/Info.plist').read_bytes())
 p.update(CFBundleExecutable='Pastel', CFBundleIdentifier='com.allenmiao.ipahistorydownload.macos15', CFBundleName='Pastel 15', CFBundleShortVersionString='20261110', CFBundleVersion='2026111002', LSMinimumSystemVersion='15.0', SUEnableAutomaticChecks=False)
-p.pop('SUFeedURL',None); p.pop('CFBundleIconName',None)
+p.pop('SUFeedURL',None); p.pop('CFBundleIconName',None); p['CFBundleIconFile']='AppIcon.icns'
 (build/'Info.plist').write_bytes(plistlib.dumps(p))
 langs={}
 for key,item in json.loads((root/'Pastel/Localizable.xcstrings').read_text())['strings'].items():
